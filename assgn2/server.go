@@ -23,7 +23,7 @@ const (
 var jwtKey = []byte("secret_key")
 
 type Claims struct {
-	rollno string `json:"rollno"`
+	Rollno string `json:"rollno"`
 	jwt.StandardClaims
 }
 
@@ -37,6 +37,7 @@ func db(rn int, name string, password string, email string) {
 		database.Prepare("INSERT INTO user (rollno, name, password, email) VALUES (?, ?, ?, ?)")
 	statement.Exec(rn, name, password, email)
 }
+
 func encrypt(string) (password string) {
 	salt := make([]byte, PW_SALT_BYTES)
 	_, err := io.ReadFull(rand.Reader, salt)
@@ -49,6 +50,17 @@ func encrypt(string) (password string) {
 		log.Fatal(err)
 	}
 	return string(hash)
+}
+
+func comparePasswords(hashedPwd string, plainPwd []byte) bool {
+
+	byteHash := []byte(hashedPwd)
+	err := bcrypt.CompareHashAndPassword(byteHash, plainPwd)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	return true
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +85,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 	rollno := r.FormValue("rollno")
 	password := r.FormValue("password")
-	password = encrypt(password)
 	rn, _ := strconv.Atoi(rollno)
 	database, _ :=
 		sql.Open("sqlite3", "./user.db")
@@ -83,12 +94,11 @@ func login(w http.ResponseWriter, r *http.Request) {
 	var pwd string
 	for rows.Next() {
 		rows.Scan(&rolln, &pwd)
-		if rn == rolln && password == pwd {
-
+		if (rn == rolln) && (comparePasswords(pwd, []byte(password))) {
 			expirationTime := time.Now().Add(time.Minute * 5)
 
 			claims := &Claims{
-				rollno: rollno,
+				Rollno: rollno,
 				StandardClaims: jwt.StandardClaims{
 					ExpiresAt: expirationTime.Unix(),
 				},
@@ -149,7 +159,7 @@ func Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("Hello, %s", claims.rollno)))
+	w.Write([]byte(fmt.Sprintf("Hello, %s", claims.Rollno)))
 
 }
 
@@ -158,7 +168,7 @@ func main() {
 	http.Handle("/", fileServer)
 	http.HandleFunc("/signup", signup)
 	http.HandleFunc("/login", login)
-
+	http.HandleFunc("/secretpage", Home)
 	fmt.Printf("Starting server at port 8080\n")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
