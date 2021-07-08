@@ -18,35 +18,38 @@ func OpenDB() {
 		fmt.Println(err)
 	}
 	statement, _ :=
-		dbu.Prepare("CREATE TABLE IF NOT EXISTS user (rollno INTEGER, name TEXT, password TEXT, email TEXT, isAdmin INTEGER)")
+		dbu.Prepare("CREATE TABLE IF NOT EXISTS user (rollno INTEGER, name TEXT, password TEXT, email TEXT, isAdmin INTEGER, unique(rollno))")
 	statement.Exec()
 	statement, _ =
 		dbu.Prepare("INSERT INTO user (rollno, name, password, email, isAdmin) VALUES (?, ?, ?, ?, ?)")
-	statement.Exec(1, "SuperAdmin", "password", "email", 1)
+	statement.Exec(1, "SuperAdmin", encrypt([]byte("password")), "email", 1)
 	DBU = dbu
 	dbc, err := sql.Open("sqlite3", "./balance.db")
 	if err != nil {
 		fmt.Println(err)
 	}
 	statement, _ =
-		dbc.Prepare("CREATE TABLE IF NOT EXISTS balance ( rollno INTEGER, coins INTEGER)")
+		dbc.Prepare("CREATE TABLE IF NOT EXISTS sbalance ( rollno INTEGER, coins INTEGER, unique(rollno))")
 	statement.Exec()
 	DBC = dbc
 	dbt, err := sql.Open("sqlite3", "./transactions.db")
-	statement, _ =
-		dbt.Prepare("CREATE TABLE IF NOT EXISTS transactions (award INTEGER, from INTEGER, to INTEGER, coins INTEGER, tax INTEGER, timestamp TEXT)")
-	statement.Exec()
 	if err != nil {
 		fmt.Println(err)
 	}
+	statement, err =
+		dbt.Prepare("CREATE TABLE IF NOT EXISTS transactions (type TEXT, fromrn INTEGER, torn INTEGER, coins INTEGER, tax INTEGER, timestamp TEXT)")
+	if err != nil {
+		fmt.Println(err)
+	}
+	statement.Exec()
 	DBT = dbt
 	dbr, err := sql.Open("sqlite3", "./redeem_requests.db")
+	if err != nil {
+		fmt.Println(err)
+	}
 	statement, _ =
 		dbr.Prepare("CREATE TABLE IF NOT EXISTS redeem_requests (rollno INTEGER, item TEXT, coins  INTEGER, status TEXT)")
 	statement.Exec()
-	if err != nil {
-		fmt.Println(err)
-	}
 	DBR = dbr
 }
 
@@ -63,10 +66,10 @@ func dbc(rn int, coin int) {
 	statement.Exec(rn, coin)
 }
 
-func dbt(aw int, frn int, trn int, coin int, tax int, ts string) {
+func dbt(ty string, frn int, trn int, coin int, tax int, ts string) {
 	statement, _ :=
-		DBT.Prepare("INSERT INTO transactions (award, from ,to , coins, tax, timestamp) VALUES (?, ?, ?, ?, ?, ?)")
-	statement.Exec(aw, frn, trn, coin, tax, ts)
+		DBT.Prepare("INSERT INTO transactions (type, fromrn , torn, coins, tax, timestamp) VALUES (?, ?, ?, ?, ?, ?)")
+	statement.Exec(ty, frn, trn, coin, tax, ts)
 }
 
 func dbr(rn int, i string, coins int, stat string) {

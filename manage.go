@@ -25,7 +25,7 @@ func credit(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
 	}
-	if isAdminLoggedIn(w, r) {
+	if isLoggedIn(w, r) {
 		cookie, err := r.Cookie("token")
 		if err != nil {
 			if err == http.ErrNoCookie {
@@ -66,19 +66,21 @@ func credit(w http.ResponseWriter, r *http.Request) {
 		for rows.Next() {
 			rows.Scan(&rolln, &coin)
 			if rn == rolln {
-				DBC.Exec("UPDATE balance SET coins = coins + ? WHERE rollno = ?", c, rn)
+				_, err = DBC.Exec("UPDATE balance SET coins = coins + ? WHERE rollno = ?", c, rn)
 				if err != nil {
 					fmt.Println(err)
+					tx.Rollback()
 					return
 				}
 			}
 		}
+		dbt("award", 1, rn, c, 0, time.Now().String())
 		err = tx.Commit()
 		if err != nil {
 			fmt.Println("Error")
+			tx.Rollback()
 			return
 		}
-		dbt(1, 0, rn, c, 0, time.Now().String())
 		fmt.Fprintf(w, "Coin Reward successful\n")
 	} else {
 		fmt.Fprintf(w, "Login as ADMIN to credit coins")
@@ -148,22 +150,22 @@ func transfer(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 	count := 0
-	var aw int
+	var ty string
 	var trn int
 	rows, err :=
-		DBT.Query("SELECT award, torn FROM transactions")
+		DBT.Query("SELECT type, torn FROM transactions")
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		rows.Scan(&aw, &trn)
-		if rnt == trn && aw == 1 {
+		rows.Scan(&ty, &trn)
+		if rnt == trn && ty == "award" {
 			count = count + 1
 		}
 	}
 	if count == 0 {
-		fmt.Fprintf(w, "You can't recieve money because you haven't participated in any event")
+		fmt.Fprintf(w, "%d can't recieve money because they haven't participated in any event", rnt)
 		return
 	}
 	res, err := DBC.Exec("UPDATE balance SET coins = coins - ?  WHERE rollno = ? AND coins - ? >= 0", c, rnf, c)
@@ -190,8 +192,8 @@ func transfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	statement, err :=
-		DBT.Prepare("INSERT INTO transactions (award, from , to, coins, tax, timestamp) VALUES (?, ?, ?, ?, ?, ?)")
-	statement.Exec(0, rnf, rnt, c, tax, time.Now().String())
+		DBT.Prepare("INSERT INTO transactions (type, fromrn, torn, coins, tax, timestamp) VALUES (?, ?, ?, ?, ?, ?)")
+	statement.Exec("transfer", rnf, rnt, c, tax, time.Now().String())
 	if err != nil {
 		fmt.Println(err)
 		tx.Rollback()

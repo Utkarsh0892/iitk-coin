@@ -22,6 +22,7 @@ func main() {
 	http.HandleFunc("/makeAdmin", makeAdmin)
 	http.HandleFunc("/manageRedeem", manageRedeemRequests)
 	http.HandleFunc("/viewRedeem", viewRedeemRequests)
+	http.HandleFunc("/updateInfo", updateInfo)
 	fmt.Printf("Starting server at port 8080\n")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println(err)

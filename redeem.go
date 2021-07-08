@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 
@@ -125,6 +126,7 @@ func manageRedeemRequests(w http.ResponseWriter, r *http.Request) {
 						txc.Rollback()
 						return
 					}
+					dbt("redeem", rn, 1, coin, 0, time.Now().String())
 				}
 				f = 1
 			}

@@ -190,6 +190,7 @@ func makeAdmin(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error")
 			return
 		}
+		fmt.Fprintf(w, "%d is now an admin", rn)
 	} else {
 		fmt.Fprintf(w, "Login as ADMIN to make new admins")
 	}
