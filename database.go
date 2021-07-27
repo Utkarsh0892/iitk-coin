@@ -11,6 +11,7 @@ var DBU *sql.DB
 var DBC *sql.DB
 var DBT *sql.DB
 var DBR *sql.DB
+//var DBO *sql.DB
 
 func OpenDB() {
 	dbu, err := sql.Open("sqlite3", "./user.db")
@@ -29,7 +30,7 @@ func OpenDB() {
 		fmt.Println(err)
 	}
 	statement, _ =
-		dbc.Prepare("CREATE TABLE IF NOT EXISTS sbalance ( rollno INTEGER, coins INTEGER, unique(rollno))")
+		dbc.Prepare("CREATE TABLE IF NOT EXISTS balance ( rollno INTEGER, coins INTEGER, unique(rollno))")
 	statement.Exec()
 	DBC = dbc
 	dbt, err := sql.Open("sqlite3", "./transactions.db")
@@ -51,6 +52,14 @@ func OpenDB() {
 		dbr.Prepare("CREATE TABLE IF NOT EXISTS redeem_requests (rollno INTEGER, item TEXT, coins  INTEGER, status TEXT)")
 	statement.Exec()
 	DBR = dbr
+	// dbo, err := sql.Open("sqlite3", "./otp.db")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// statement, _ =
+	// 	dbo.Prepare("CREATE TABLE IF NOT EXISTS otp (rollno INTEGER, otp INTEGER,unique(rollno))")
+	// statement.Exec()
+	// DBO = dbo
 }
 
 func dbu(rn int, name string, password string, email string, adm int) {
@@ -60,10 +69,13 @@ func dbu(rn int, name string, password string, email string, adm int) {
 }
 
 func dbc(rn int, coin int) {
+	fmt.Println("ok6")
 
 	statement, _ :=
 		DBC.Prepare("INSERT INTO balance (rollno, coins) VALUES (?, ?)")
+	fmt.Println("ok7")
 	statement.Exec(rn, coin)
+	fmt.Println("ok8")
 }
 
 func dbt(ty string, frn int, trn int, coin int, tax int, ts string) {
@@ -77,3 +89,9 @@ func dbr(rn int, i string, coins int, stat string) {
 		DBR.Prepare("INSERT INTO redeem_requests (rollno, item, coins, status) VALUES (?, ?, ?, ?)")
 	statement.Exec(rn, i, coins, stat)
 }
+
+// func dbo(rn int, otp int) {
+// 	statement, _ :=
+// 		DBO.Prepare("INSERT INTO otp (rollno, otp) VALUES (?, ?)")
+// 	statement.Exec(rn, otp)
+// }

@@ -11,6 +11,40 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// func validateRedeem(w http.ResponseWriter, r *http.Request) {
+// 	if err := r.ParseForm(); err != nil {
+// 		fmt.Fprintf(w, "ParseForm() err: %v", err)
+// 		return
+// 	}
+// 	fmt.Println("POST request successful")
+// 	if isLoggedIn(w, r) {
+// 		cookie, err := r.Cookie("token")
+// 		if err != nil {
+// 			if err == http.ErrNoCookie {
+// 				w.WriteHeader(http.StatusUnauthorized)
+// 				return
+// 			}
+// 			w.WriteHeader(http.StatusBadRequest)
+// 			return
+// 		}
+
+// 		tokenStr := cookie.Value
+
+// 		claims := &Claims{}
+
+// 		_, _ = jwt.ParseWithClaims(tokenStr, claims,
+// 			func(t *jwt.Token) (interface{}, error) {
+// 				return jwtKey, nil
+// 			})
+// 		rn, _ := strconv.Atoi(claims.Rollno)
+// 		generateOTP(rn)
+// 		fileServer := http.FileServer(http.Dir("./static/OTP.html"))
+// 		http.Handle("/", fileServer)
+// 	}else {
+// 		fmt.Fprintf(w, "Login to redeem")
+// 		return
+// 	}
+// }
 func redeem(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
@@ -19,8 +53,7 @@ func redeem(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("POST request successful")
 	i := r.FormValue("item")
 	c, _ := strconv.Atoi(r.FormValue("coins"))
-	if isLoggedIn(w, r) {
-		cookie, err := r.Cookie("token")
+	cookie, err := r.Cookie("token")
 		if err != nil {
 			if err == http.ErrNoCookie {
 				w.WriteHeader(http.StatusUnauthorized)
@@ -41,14 +74,15 @@ func redeem(w http.ResponseWriter, r *http.Request) {
 		rn, _ := strconv.Atoi(claims.Rollno)
 		stat := "pending"
 		rows, _ :=
-			DBR.Query("SELECT rollno,status from redeem_requests")
+			DBR.Query("SELECT rollno,status,item from redeem_requests")
 		var rollno int
 		var status string
+		var item string
 		f := 0
 		for rows.Next() {
-			rows.Scan(&rollno, &status)
+			rows.Scan(&rollno, &status, &item)
 			{
-				if rollno == rn {
+				if rollno == rn && item==i{
 					stat = status
 					f = 1
 				}
@@ -63,10 +97,6 @@ func redeem(w http.ResponseWriter, r *http.Request) {
 			}
 			fmt.Fprintf(w, "Your request has been sent to admin")
 		}
-	} else {
-		fmt.Fprintf(w, "Login to redeem")
-		return
-	}
 }
 
 func manageRedeemRequests(w http.ResponseWriter, r *http.Request) {

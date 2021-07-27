@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	// "math/rand"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
+	//gomail "gopkg.in/mail.v2"
 )
 
 const (
@@ -197,6 +199,10 @@ func makeAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 func isAdminLoggedIn(w http.ResponseWriter, r *http.Request) bool {
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return false
+	}
 	if isLoggedIn(w, r) {
 		cookie, err := r.Cookie("token")
 		if err != nil {
@@ -222,3 +228,58 @@ func isAdminLoggedIn(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 }
+
+// func generateOTP(rn int) {
+// 	otp := 0
+// 	for i := 0; i < 4; i++ {
+// 		d := rand.Intn(10)
+// 		otp = otp*10 + d
+// 	}
+
+// 	dbo(rn,otp)
+// 	new := gomail.NewMessage()
+
+// 	new.SetHeader("From", "utkarshs20@iitk.ac.in")
+// 	new.SetHeader("To", strconv.Itoa(rn)+"@iitk.ac.in")
+// 	new.SetHeader("Subject", "OTP")
+// 	new.SetBody("text/plain", "Your OTP is "+strconv.Itoa(otp))
+
+// 	a := gomail.NewDialer("mmtp.iitk.ac.in", 25, "utkarshs20@gmail.com", "<password>")
+
+// 	if err := a.DialAndSend(new); err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+// }
+
+// func validateOTP(w http.ResponseWriter, r *http.Request){
+// 	if err := r.ParseForm(); err != nil {
+// 		fmt.Fprintf(w, "ParseForm() err: %v", err)
+// 		return
+// 	}
+// 	rollno := r.FormValue("rollno")
+// 	rn, _ := strconv.Atoi(rollno)
+// 	ot := r.FormValue("otp")
+// 	otp, _ := strconv.Atoi(ot)
+//     rows,err:= 
+// 	    DBO.Query("SELECT rollno, otp FROM otp")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+// 	var rolln int
+// 	var o int
+// 	for rows.Next(){
+//         rows.Scan(&rolln,&o)
+// 		{
+// 			if rolln==rn {
+// 				if (o==otp){
+// 					http.Redirect(w, r, "/redeem", http.StatusSeeOther)
+// 				}else{
+// 					fmt.Fprintf(w,"Incorrect OTP")
+// 					return 
+// 				}
+// 			}
+// 		}
+// 	}
+// }
